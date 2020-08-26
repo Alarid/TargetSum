@@ -1,12 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, Text, StyleSheet, Button} from 'react-native';
+import {Icon} from 'react-native-elements';
 import RandomNumber from './RandomNumber';
+import shuffle from 'lodash.shuffle';
 
 class Game extends React.Component {
   static propTypes = {
     randomNumberCount: PropTypes.number.isRequired,
     initialSeconds: PropTypes.number.isRequired,
+    onPlayAgain: PropTypes.func.isRequired,
   };
 
   state = {
@@ -23,7 +26,8 @@ class Game extends React.Component {
   target = this.randomNumbers
     .slice(0, this.props.randomNumberCount - 2)
     .reduce((acc, curr) => acc + curr, 0);
-  // TODO shuffle random numbers
+
+  shuffledRandomNumbers = shuffle(this.randomNumbers);
 
   componentDidMount() {
     this.countdown = setInterval(() => {
@@ -65,9 +69,8 @@ class Game extends React.Component {
   };
 
   calcGameStatus = (nextState) => {
-    console.log('calcGameStatus');
     const sumSelected = nextState.selectedIds.reduce((acc, curr) => {
-      return acc + this.randomNumbers[curr];
+      return acc + this.shuffledRandomNumbers[curr];
     }, 0);
     if (nextState.remainingSeconds === 0) {
       return 'LOST';
@@ -85,12 +88,14 @@ class Game extends React.Component {
     const gameStatus = this.gameStatus;
     return (
       <View style={styles.container}>
-        <Text style={[styles.target, styles[`STATUS_${gameStatus}`]]}>
-          {this.target}
-        </Text>
+        <View style={styles.targetContainer}>
+          <Text style={[styles.target, styles[`STATUS_${gameStatus}`]]}>
+            {this.target}
+          </Text>
+        </View>
 
         <View style={styles.randomNumerContainer}>
-          {this.randomNumbers.map((randomNumber, index) => (
+          {this.shuffledRandomNumbers.map((randomNumber, index) => (
             <RandomNumber
               key={index}
               id={index}
@@ -103,7 +108,16 @@ class Game extends React.Component {
           ))}
         </View>
 
-        <Text>{this.state.remainingSeconds}</Text>
+        <View style={styles.timerContainer}>
+          <Icon name="timer" />
+          <Text style={styles.timer}>{this.state.remainingSeconds}</Text>
+        </View>
+
+        <View style={styles.playAgain}>
+          {this.gameStatus !== 'PLAYING' && (
+            <Button title="Play again" onPress={this.props.onPlayAgain} />
+          )}
+        </View>
       </View>
     );
   }
@@ -113,31 +127,48 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ddd',
     flex: 1,
-    paddingTop: 30,
+    justifyContent: 'space-between',
+  },
+  targetContainer: {
+    flex: 1,
+    marginTop: 10,
+    justifyContent: 'center',
   },
   target: {
     fontSize: 50,
-    margin: 40,
+    marginHorizontal: 40,
     backgroundColor: '#bbb',
     textAlign: 'center',
   },
   randomNumerContainer: {
-    flex: 1,
+    flex: 3,
+    paddingTop: 10,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-around',
   },
-
   STATUS_PLAYING: {
     backgroundColor: '#bbb',
   },
-
   STATUS_WON: {
     backgroundColor: 'green',
   },
-
   STATUS_LOST: {
     backgroundColor: 'red',
+  },
+  timerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  timer: {
+    fontSize: 30,
+    marginLeft: 5,
+  },
+  playAgain: {
+    flex: 1,
+    marginHorizontal: 40,
   },
 });
 
